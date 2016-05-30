@@ -1,0 +1,1 @@
+pour dessine :nb :long forme :nb :long si :nb < 12 [ dessine :nb + 1 :long ] fin

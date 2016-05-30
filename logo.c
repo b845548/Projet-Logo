@@ -1,0 +1,790 @@
+#include"logo.h"
+
+  SDL_Color couleur2={110, 210, 235};
+
+void init(void){
+    SDL_Init(SDL_INIT_VIDEO);
+    ecran = SDL_SetVideoMode(1000, /*200*/ 800, 32, SDL_HWSURFACE);
+    
+    SDL_WM_SetCaption("Project : LOGO",NULL);
+    if(ecran==NULL)printf("Error! : Screen error\n");
+    interface = IMG_Load("interface2.png");
+    TTF_Init();
+    police = TTF_OpenFont("LinLibertine_aZL.ttf", 18);
+    angle_=90; 
+    ligne_=0;
+    pen_=1;
+    shift=0;
+    posy=POSY_INITIAL;
+    posx=POSX_INITIAL;
+}
+
+int isnumber(char *string){
+	int i;
+	if(!string)return 0;
+	for(i=0;i<strlen(string);i++)
+		if(!isdigit(string[i]))return 0;
+	return 1;
+}
+int isvariable(char *string){
+int i;
+	if(!string)return 0;
+	for(i=1;string[i];i++)
+		if(!isalpha(string[i]))return 0;
+	if(string[0]==':'&&string[1])return 1;
+	return 0;
+}
+int compilateur(char **args,char arg_str_backup[MAXARG]){
+        char predefine[MAXARG][MAXARG]={{" "},{"]"},{"["},{"av"},{"re"},{"td"},{"tg"},{"repete"},{"pour"},{"fin"},{"lc"},{"bc"},{"+"},{"-"},{"*"},{"%"},{"/"},{"^"},{"<"},{">"},{"si"},{"fpos"},{"nettoie"},{"ve"},{"rc!"}};
+	int i,j,h;
+	int find;
+	int cha=0;
+	int crochet=0;
+	int pour=0;
+	FILE * LOG_FILE_ERROR; 
+	LOG_FILE_ERROR=fopen("Logo_ERR.logfile","a+");
+	if(LOG_FILE_ERROR==NULL)LOG_FILE_ERROR=fopen("Logo_ERR.logfile","w"); 
+	
+	for(i=0;args[i]!=NULL;i++){
+		for(j=0;j<MAXARG;j++){
+		  if(0==strcmp("pour",args[i]))pour=1;
+		  if(0==strcmp(predefine[j],args[i])&&strlen(predefine[j])==strlen(args[i]))find=1;
+		}
+		if(find==1)find=0;
+		else if(!isvariable(args[i]))if(!isnumber(args[i]))
+                {
+
+		char filename[MAXCHAR];
+		memset(filename,0,MAXCHAR);
+		strcat(filename,args[i]);
+		strcat(filename,".logo");
+                if(NULL==fopen(filename,"r")&& pour==0){
+		   
+		printf("Exception! : Non defined function '%s'\n",args[i]);
+		printf("%s\n",arg_str_backup); 
+		fprintf(LOG_FILE_ERROR,"Exception! : Non defined function '%s'\n",args[i]);	
+		fprintf(LOG_FILE_ERROR,"%s\n",arg_str_backup);
+		//for(h=0;args[h];h++)printf("%s ",args[h]);
+		for(h=0;strcmp(args[i],args[h])!=0;h++)cha+=strlen(args[h])+1;
+		//printf("\n");
+		for(h=0;h<cha;h++){
+			printf(" ");
+			fprintf(LOG_FILE_ERROR," ");
+		}
+		printf("^ BAD SYNTAX\n");
+	        fprintf(LOG_FILE_ERROR,"^ BAD SYNTAX\n");
+		fclose(LOG_FILE_ERROR);
+		return 1;
+		}
+	}
+		if(strcmp(args[i],"[")==0)crochet++;
+		if(strcmp(args[i],"]")==0)crochet--;
+	}
+	if(crochet!=0){
+		printf("Exception! : Bracket is not closed\n");
+	        fprintf(LOG_FILE_ERROR,"Exception! : Bracket is not closed\n");
+		fclose(LOG_FILE_ERROR);
+		return 1;
+	}	
+	fclose(LOG_FILE_ERROR);
+	return 0;
+}
+
+void echangerEntiers(int* x, int* y){
+   //Reference : http://anomaly.developpez.com/tutoriel/sdl/partie2/
+  int t = *x;
+  *x = *y;
+  *y = t;
+}
+void ligne(int x1, int y1, int x2, int y2, Uint32 coul){
+   //Reference : http://anomaly.developpez.com/tutoriel/sdl/partie2/
+  int d, dx, dy, aincr, bincr, xincr, yincr, x, y;
+ 	SDL_Rect Rect;
+	Rect.x = x1;
+	Rect.y = y1;
+	Rect.w = 3;
+	Rect.h = 3;
+	if (abs(x2 - x1) < abs(y2 - y1)) {
+    /* parcours par l'axe vertical */
+ 
+    if (y1 > y2) {
+      echangerEntiers(&x1, &x2);
+      echangerEntiers(&y1, &y2);
+    }
+    xincr = x2 > x1 ? 1 : -1;
+    dy = y2 - y1;
+    dx = abs(x2 - x1);
+    d = 2 * dx - dy;
+    aincr = 2 * (dx - dy);
+    bincr = 2 * dx;
+    x = x1;
+    y = y1;
+	Rect.x = x;
+	Rect.y = y;
+	if(pen_==1)SDL_FillRect(ecran, &Rect,coul);
+ 
+    for (y = y1+1; y <= y2; ++y) {
+      if (d >= 0) {
+	x += xincr;
+	d += aincr;
+      } else
+	d += bincr;
+      
+	Rect.x = x;
+	Rect.y = y;
+	if(pen_==1)SDL_FillRect(ecran, &Rect,coul);
+    }
+ 
+  } else {
+    /* parcours par l'axe horizontal */
+    
+    if (x1 > x2) {
+      echangerEntiers(&x1, &x2);
+      echangerEntiers(&y1, &y2);
+    }
+ 
+    yincr = y2 > y1 ? 1 : -1;
+    dx = x2 - x1;
+    dy = abs(y2 - y1);
+    d = 2 * dy - dx;
+    aincr = 2 * (dy - dx);
+    bincr = 2 * dy;
+    x = x1;
+    y = y1;
+    
+	Rect.x = x;
+	Rect.y = y;
+	if(pen_==1)SDL_FillRect(ecran, &Rect,coul);
+	  // setPixelVerif(x, y, coul);
+ 
+    for (x = x1+1; x <= x2; ++x) {
+      if (d >= 0) {
+	y += yincr;
+	d += aincr;
+      } else
+	d += bincr;
+      
+	Rect.x = x;
+	Rect.y = y;
+	if(pen_==1)SDL_FillRect(ecran, &Rect,coul);
+	//setPixelVerif(x, y, coul);
+    }
+ }   
+}
+
+dest calcul_destination(int ligne,double angle){
+  double x2,y2;
+  dest res;
+  angle-=90;
+  // printf ("ligne %d angle : %f\n",ligne,angle);
+  y2 =ligne* sin(angle*PI/180);
+  x2 =ligne* cos(angle*PI/180);
+  printf ("X2 : %f Y2 : %f\n", x2,y2);
+  res.x=x2;
+  res.y=y2;
+  return res;
+}
+
+
+char ** calcul(char ** args){
+  int indice_arg1=0;
+  int indice_arg2=0;
+  int val,val2,res;
+  char * nombre;
+  char ** args2;
+  char * operator;
+  nombre=(char *)malloc(MAXCHAR*sizeof(char*));
+  args2=(char**)malloc(MAXARG*sizeof(char*));
+
+  /*
+  int g;
+  for(g=0;NULL!=args[g];g++)printf("%s ",args[g]);
+  */
+  while(args[indice_arg1]!=NULL){
+    if(strcmp(args[indice_arg1],"+")==0 ||strcmp(args[indice_arg1],"-")==0||strcmp(args[indice_arg1],"*")==0 || strcmp(args[indice_arg1],"/")==0|| strcmp(args[indice_arg1],"^")==0 ||strcmp(args[indice_arg1],"%")==0){
+      operator=args[indice_arg1];
+    indice_arg2--;
+    
+    val=atoi(args2[indice_arg2]);
+      indice_arg1++;
+      val2=atoi(args[indice_arg1]);
+      printf("val1 %d val2 %d\n",val,val2);
+      
+      ////////////// calcul ///////////////////////
+      if(strcmp(operator,"+")==0)res=val+val2;
+      if(strcmp(operator,"-")==0)res=val-val2;
+      if(strcmp(operator,"*")==0)res=val*val2;
+      if(strcmp(operator,"/")==0)res=val/val2;
+      if(strcmp(operator,"%")==0)res=val%val2;
+      if(strcmp(operator,"^")==0)res=pow(val,val2);
+      ////////////////////////////////////////////
+ 
+      sprintf(nombre,"%d",res);
+      args2[indice_arg2]=nombre;
+      indice_arg1++;
+      indice_arg2++;
+    }else if(strcmp(args[indice_arg1],"rc!")==0){
+      
+      indice_arg1++;
+    val=atoi(args[indice_arg1]);
+    res =sqrt(val);
+      sprintf(nombre,"%d",res);
+      args2[indice_arg2]=nombre;
+      indice_arg1++;
+      indice_arg2++;
+    }
+    else{
+    args2[indice_arg2]=args[indice_arg1];
+    indice_arg1++;
+    indice_arg2++;
+    }
+    
+  }
+
+  
+  return args2;
+}
+
+void decoupage_input(char buffer[MAXARG],char ** args){
+int i=0;
+int crochet=0;
+char * tmp;
+args[i]=strtok(buffer," ");
+while(1){
+	i++;
+	tmp=strtok(NULL," ");
+	if(tmp==NULL){
+		args[i]=NULL;
+		return;
+	}
+	if(strchr(tmp,'+')||strchr(tmp,'-')||strchr(tmp,'*')||strchr(tmp,'/')||strchr(tmp,'^')||strchr(tmp,'<')||strchr(tmp,'>')||strchr(tmp,'%')){
+	   int j=0,h=0;
+	   char * decoup=(char*)malloc(strlen(tmp)*sizeof(char));
+	   for(j=0; isdigit(tmp[j]);j++){
+	     decoup[j]=tmp[j];
+	   }
+	   args[i++]=decoup;
+	   if(tmp[j]=='+')args[i++]="+";
+	   if(tmp[j]=='-')args[i++]="-";
+	   if(tmp[j]=='*')args[i++]="*";
+	   if(tmp[j]=='/')args[i++]="/";
+	   if(tmp[j]=='%')args[i++]="%";
+	   if(tmp[j]=='^')args[i++]="^";
+	   if(tmp[j]=='<')args[i++]="<";
+	   if(tmp[j]=='>')args[i++]=">";
+	   j++;
+	   memset(decoup,0,strlen(tmp));
+	   for(h=0; isdigit(tmp[j]);h++,j++)
+	     decoup[h]=tmp[j];
+	   args[i]=decoup;
+	   
+	   if(tmp[j]==']')args[++i]="]";
+	   if(tmp[j]=='[')args[++i]="[";
+
+	 }else if(strchr(tmp,'[')!=NULL){
+		char * decoup=(char*)malloc(strlen(tmp)*sizeof(char));
+		tmp++;
+		if(*tmp==' ')tmp++;
+		strncpy(decoup,tmp,strlen(tmp));
+		args[i++]="[";
+		args[i]=decoup;
+		
+	}else if(strchr(tmp,']')!=NULL){
+		char * decoup=(char*)malloc(strlen(tmp)*sizeof(char));
+		int j;
+		int count=0;
+		for(j=0;tmp[j]!=']';j++)
+			decoup[j]=tmp[j];
+		
+		args[i]=decoup;
+		
+		for(j=0;j<strlen(tmp);j++)
+			if(tmp[j]==']')count++;
+		for(j=0;j<count;j++){
+			args[++i]="]";
+		}
+	 }else args[i]=tmp;
+	}	
+}
+
+int decoupage_define(char buffer[MAXCHAR],char ** args2,char **tabvariable){
+	int i=0;
+	int count=0;int debut=0;
+	char * tmp;
+	tmp=strtok(buffer," ");
+	tmp=strtok(NULL," ");
+	tabvariable[count++]=tmp=strtok(NULL," ");
+	while(tmp!=NULL){
+		tmp=strtok(NULL," ");
+		if(tmp==NULL)break;
+		if(*tmp==':'&&debut==0){
+			tabvariable[count++]=tmp;
+		}
+		else {
+			debut++;
+			args2[i++]=tmp;
+		}
+
+	}
+	args2[--i]=NULL;
+	return count;
+}
+
+
+  
+
+void remplace_variable(char ** valtab,int nbvariable,char ** varitab,char **args2){
+	int i=0,j=0;
+	for(j=0;j<nbvariable;j++){
+	for(i=0;args2[i];i++){
+	if(strcmp(varitab[j],args2[i])==0)
+		args2[i]=valtab[j];
+	}
+	}
+	return;
+}
+
+void arg_interpreteur(char **args){
+	int i=0;
+	int repetition;
+	int ligne_tmp;
+        dest des;
+  
+  if(!args[0])return;
+	while(1){
+	  
+        if(strcmp(args[i],"av")==0){
+		i++;
+		ligne_tmp=atoi(args[i]);
+
+		des =calcul_destination(ligne_tmp,angle_);
+		ligne(posx,posy,des.x+posx,des.y+posy,SDL_MapRGB(ecran->format, 152,235,255));
+		posx=des.x+posx;
+		posy=des.y+posy;
+		i++;
+	}else if(strcmp(args[i],"re")==0){
+	        i++;
+		ligne_tmp=atoi(args[i]);
+		des =calcul_destination(ligne_tmp,angle_);
+		//printf("%f %f %f %"fposx,posy,-1*des.x+posx,des.y
+		
+		ligne(posx,posy,posx-des.x,posy-des.y,SDL_MapRGB(ecran->format, 152,235,255));
+	
+		posx=posx-des.x;
+		posy=posy-des.y;
+		i++;
+	}
+	else if(strcmp(args[i],"td")==0){
+		i++;
+		angle_+=atoi(args[i]);
+		if(360<=angle_)angle_-=360;		
+		i++;
+	}
+	else if(strcmp(args[i],"tg")==0){
+		i++;
+
+		angle_-=atoi(args[i]);
+		if(0>angle_)angle_+=360;		
+		i++;
+	}
+	else if(strcmp(args[i],"lc")==0){
+		pen_=0;
+		i++;
+	}
+	else if(strcmp(args[i],"bc")==0){
+		pen_=1;
+		i++;
+	}
+	else if(strcmp(args[i],"repete")==0){
+		i++;// rep
+		repetition=atoi(args[i++]);//arg  5 arg +1 [ 
+		i++;// instruction
+		int nb_bracket;
+		int bracket;
+		int j,h;
+		char ** tab;
+		char ** tab_calcul;
+		tab=(char **)malloc(MAXARG*sizeof(char*));
+		nb_bracket=0;
+		bracket=1;
+		j=0;
+		while(bracket){
+		if(strcmp(args[i],"[")==0)bracket++;
+		if(strcmp(args[i],"]")==0 ||strcmp(args[i],"]\n")==0)bracket--;
+			tab[j++]=args[i++];
+		}
+		for(h=0;h<nb_bracket;h++){
+			tab[j++]="]";
+		}
+		tab[j]=NULL;
+		for(h=0;h<repetition;h++){
+		  tab_calcul=calcul(tab);
+		  arg_interpreteur(tab_calcul);
+		}
+		}
+	else if(strcmp(args[i],"pour")==0){
+		i++;
+		FILE * write_define;
+		char filename[MAXCHAR];
+		memset(filename,0,MAXCHAR);
+		strcat(filename,args[i]);
+		strcat(filename,".logo");
+	
+		write_define=fopen(filename,"w");
+		if(write_define==NULL){
+		printf("Error! : Impossible to create this funtion '%s'\n",args[i]);
+		return;
+		}else printf("Success : The function '%s' is defined\n",args[i]);
+		fputs("pour ",write_define);
+		fputs(args[i],write_define);
+		fputs(" ",write_define);
+		i++;
+		while(strcmp(args[i],"fin")!=0){
+			fputs(args[i++],write_define);
+			fputs(" ",write_define);
+		}
+		i++;
+		
+			fputs("fin",write_define);
+		fclose(write_define);
+	}else if(strcmp(args[i],"si")==0){
+	  char * operator;
+	  int val1,val2;
+	  int nb_bracket2;
+	  int bracket2;
+	  int j2,h2;
+	  char ** tab2;
+	  char ** tab_calcul2;
+	  tab2=(char **)malloc(MAXARG*sizeof(char*));
+	        i++;
+		val1=atoi(args[i]);
+		i++;	
+		operator=args[i++];
+	        val2=atoi(args[i]);
+		i++;
+		i++;
+		printf("val1: %d val2 %d\n",val1,val2);
+		nb_bracket2=0;
+		bracket2=1;
+		j2=0;
+	   while(bracket2){
+		if(strcmp(args[i],"[")==0)bracket2++;
+		if(strcmp(args[i],"]")==0 || strcmp(args[i],"]\n")==0)bracket2--;
+		tab2[j2++]=args[i++];
+		}
+	   for(h2=0;h2<nb_bracket2;h2++){
+			tab2[j2++]="]";
+		}
+		tab2[j2]=NULL;
+		printf("Comparaison entre %d et %d\n",val1,val2);
+		if(strcmp(operator,">")==0)if(val1>val2){
+		  printf("val1 %d > val2 %d = true\n",val1,val2);
+		  tab_calcul2=calcul(tab2);
+		  arg_interpreteur(tab_calcul2);
+		}
+		if(strcmp(operator,"<")==0)if(val1<val2){
+		  printf("val1 %d < val2 %d = true\n",val1,val2);
+		  tab_calcul2=calcul(tab2);
+		  arg_interpreteur(tab_calcul2);
+		  }
+		
+	}else if(strcmp(args[i],"fpos")==0){
+	  SDL_Rect Point_actuel;
+	  Point_actuel.x = posx;
+	  Point_actuel.y = posy;
+	  Point_actuel.w = 3;
+	  Point_actuel.h = 3;
+	  SDL_FillRect(ecran, &Point_actuel,SDL_MapRGB(ecran->format, 0,0,0));
+
+	        i++;
+		posx=atoi(args[i]);
+		i++;
+		posy=atoi(args[i]);
+		i++;
+	}
+	else if(strcmp(args[i],"nettoie")==0 ||strcmp(args[i],"ve")==0){
+	  if(strcmp(args[i],"ve")==0){	    
+	    posy=POSY_INITIAL;
+	    posx=POSX_INITIAL;
+	    angle_=90; 
+	    }
+	        i++;
+		SDL_Rect nettoyage;
+		nettoyage.x = 0;
+		nettoyage.y = 0;
+		nettoyage.w = 1000;
+		nettoyage.h = 800;
+		SDL_FillRect(ecran, &nettoyage,SDL_MapRGB(ecran->format, 0,0,0));
+	}
+        else if(!isalnum(*args[i])){
+		i++;
+		
+	}else if(strcmp(args[i],"fin")==0||strcmp(args[i],"fin\n")==0){
+		i++;
+		
+	}else{//default : la fonction definie ou inconnue
+	  // printf("passe\n");
+	FILE * read_define;
+	char filename[MAXCHAR];
+	memset(filename,0,MAXCHAR);
+	strcat(filename,args[i]);
+	strcat(filename,".logo");
+	read_define=fopen(filename,"r");
+	if(read_define==NULL){
+		printf("Exception! : Non defined function : '%s'\n",args[i]);
+		return;
+	}
+	int nb_variable;
+	int g=0;
+	char buffer[MAXCHAR];	
+	char * fichier_total=(char *)malloc(MAXCHAR*sizeof(char));
+	char ** variabletab=(char**)malloc(MAXARG*sizeof(char*));
+	char ** valeurtab=(char**)malloc(MAXARG*sizeof(char*));
+	char ** args2=(char **)malloc(MAXARG*MAXARG*sizeof(char*));
+	char ** arg_calcul;
+	while(fgets(buffer,MAXCHAR,read_define)!=NULL){
+	   	while(buffer[g]!=0)g++;
+		g--;
+	        buffer[g]=' ';		    
+		strcat(fichier_total,buffer);
+	  }
+	printf("fichier_total %s\n",fichier_total);
+	nb_variable=decoupage_define(fichier_total,args2,variabletab);
+	for(g=0;g<nb_variable;g++){
+	valeurtab[g]=args[++i];
+	}
+	remplace_variable(valeurtab,nb_variable,variabletab,args2);
+	//printf("nbvarible %d\n",nb_variable);
+	for(g=0;g<nb_variable;g++)
+	  if(valeurtab[g]!=NULL)
+	    printf("valriable : %s valeur %s\n",variabletab[g],valeurtab[g]);
+	  else
+	    printf("Exception! : the value of variable '%s' is not entered\n",variabletab[g]);
+	 
+	arg_calcul=calcul(args2);
+	
+	printf("calculé\n");
+	int x;
+	for(x=0; arg_calcul[x]!=NULL; x++){
+	  printf("%s ",arg_calcul[x]);
+	}
+	
+	arg_interpreteur(args2);
+	i++;
+	fclose(read_define);
+	
+	
+	}
+	if(!args[i])return;//la fin d'execution
+}
+	
+return;
+}
+
+void input_interpreteur(char arg_str[MAXCHAR]){
+	char ** arg_decoup=(char **)malloc(MAXARG*sizeof(char*));
+	char ** arg_calcul;
+	char arg_str_backup[MAXCHAR];
+	FILE * LOG_FILE;
+	
+	LOG_FILE=fopen("Logo_sucess.logfile","a+");
+	if(LOG_FILE==NULL)LOG_FILE=fopen("Logo_sucess.logfile","w"); 
+
+	strcpy(arg_str_backup,arg_str);
+	decoupage_input(arg_str,arg_decoup);
+	if(compilateur(arg_decoup,arg_str_backup)==0){
+          fputs(arg_str_backup,LOG_FILE);
+	  fputs(" ",LOG_FILE);
+	  arg_calcul=calcul(arg_decoup);
+	  arg_interpreteur(arg_calcul);
+	    
+	}
+	fclose(LOG_FILE);
+        free(arg_decoup);
+}
+void animation(){
+  int i;
+  int indice=0;
+  int ligne_txt=1;
+  int j,z;
+  SDL_Rect postext;
+  SDL_bool continuer=SDL_TRUE;
+  SDL_Event event;
+  SDL_Rect position;
+  SDL_Rect parametre;
+  SDL_Rect Point_actuel;
+  char * mini_buffer=(char*)malloc(41*sizeof(char));
+  char * buffer=(char*)malloc(MAXCHAR*sizeof(char));
+  char * buffer_para=(char*)malloc(MAXCHAR*sizeof(char));
+   memset(buffer,0,MAXCHAR);
+   memset(buffer_para,0,MAXCHAR);
+   postext.x = 500;// 500;
+   postext.y =700;//650;
+   SDL_EnableKeyRepeat(80,160);
+	
+  while(continuer){
+     if(posx<=0)Point_actuel.x=posx=0;
+     if(posy<=0)Point_actuel.y=posy=0;
+     if(posx>=1000)Point_actuel.x=posx=997;
+     if(posy>=599)Point_actuel.y=posy=599;
+     if(angle_>=360)angle_-=360;
+     if(angle_<0)angle_+=360;
+     
+     position.x=10;
+     position.y=600;
+     SDL_BlitSurface(interface, NULL, ecran, &position);
+    for(z=0,i=0;i<ligne_txt;i++){
+       for(j=0; j<=40; j++,z++) mini_buffer[j]=buffer[z];
+     texte = TTF_RenderText_Blended(police, mini_buffer, couleur2);
+     if(i==0)postext.y=650;
+     if(i==1)postext.y=670;
+     if(i==2)postext.y=690;
+     if(i==3)postext.y=710;
+
+     SDL_BlitSurface(texte, NULL, ecran, &postext);
+     }
+     
+	Point_actuel.x = posx;
+	Point_actuel.y = posy;
+	Point_actuel.w = 3;
+        Point_actuel.h = 3;
+     SDL_FillRect(ecran, &Point_actuel,SDL_MapRGB(ecran->format, 255,255,255));
+
+
+       Para_img = TTF_RenderText_Blended(police,"Parameters", couleur2);
+     
+       parametre.x=600;
+       parametre.y=750;
+       SDL_BlitSurface(Para_img, NULL, ecran, &parametre);
+       
+       sprintf(buffer_para,"PosX: %0.2f PosY: %0.2f Degree: %0.2f",posx,posy,angle_);
+       Para_img = TTF_RenderText_Blended(police,buffer_para, couleur2);
+       parametre.x+=20;
+       parametre.y+=20;
+       SDL_BlitSurface(Para_img, NULL, ecran, &parametre);
+     
+     if(SDL_PollEvent(&event)) {
+       switch (event.type) {	 
+       case SDL_QUIT:
+	 continuer =SDL_FALSE;
+	 break;
+       case SDL_KEYDOWN:
+	 if(indice==30)ligne_txt=2;
+	 if(indice==50)ligne_txt=3;
+	 if(indice==70)ligne_txt=4;
+	 if(indice==90)ligne_txt=5;
+	 switch(event.key.keysym.sym){
+	 case 13:case 271:
+	   input_interpreteur(buffer);
+	   memset(buffer,0,MAXCHAR);
+	   indice=0;
+	   ligne_txt=1;
+	   break;
+	 case 58:
+	   buffer[indice++]=':';
+	 break;
+	 case 267:
+	   buffer[indice++]=SDLK_SLASH;
+	 break;
+	 case 42: case 268:
+	   buffer[indice++]=SDLK_ASTERISK;
+	 break;
+	  case 269:
+	   buffer[indice++]=SDLK_MINUS;
+	   break;
+	 case 249:
+	   buffer[indice++]='%';
+	 break;
+	 case 304: case 301:
+	   if(shift==0){shift=1;
+	     printf("key shift on\n");}
+	   else if(shift==1){shift=0;
+	     printf("key shift off\n");}
+	   break;
+	 case 270:
+	   buffer[indice++]=SDLK_PLUS;
+	 break;
+	 case 32:
+	     buffer[indice++]=SDLK_SPACE;
+	 break;
+	 case 33:
+	     buffer[indice++]='!';
+	 break;
+	 case SDLK_BACKSPACE:
+	   buffer[--indice]=0;
+	   if(indice<0)indice=0;
+	   break;	   
+	 case 38:
+	   if(shift==1) buffer[indice++]='1';
+	   else if(shift==0) buffer[indice++]='&';
+	   break;
+	 case 233:
+	   if(shift==1) buffer[indice++]='2';
+	   else if(shift==0) buffer[indice++]='~';
+	   break;
+	 case 34:
+	   if(shift==1) buffer[indice++]='3';
+	   else if(shift==0) buffer[indice++]='"';
+	   break;
+	 case 39:
+	   if(shift==1) buffer[indice++]='4';
+	   else if(shift==0) buffer[indice++]='`';
+	   break;
+	 case 40:	   
+	   if(shift==1) buffer[indice++]='5';
+	   else if(shift==0)buffer[indice++]=SDLK_LEFTBRACKET;
+	 break;
+	 case 45:
+	   if(shift==1) buffer[indice++]='6';
+	   else if(shift==0)buffer[indice++]=SDLK_MINUS;
+	   break;
+	 case 232:
+	   if(shift==1) buffer[indice++]='7';
+	   else if(shift==0)buffer[indice++]='`';
+	   break;
+	 case 95:
+	   if(shift==1) buffer[indice++]='8';
+	   else if(shift==0)buffer[indice++]='_';
+	   break;
+	 case 231:
+	   if(shift==1) buffer[indice++]='9';
+	   else if(shift==0)buffer[indice++]='^';
+	   break;
+	 case 224:
+	   if(shift==1) buffer[indice++]='0';
+	   else if(shift==0)buffer[indice++]='@';
+	   break;
+	 case 41:
+	   buffer[indice++]=SDLK_RIGHTBRACKET;
+	 break;    
+	 case 61:
+	   if(shift==0) buffer[indice++]='+';
+	   else if(shift==1)buffer[indice++]='=';
+	   break;
+	 case 60:
+	   if(shift==0) buffer[indice++]='<';
+	   else if(shift==1)buffer[indice++]='>';
+	   break;
+	   
+       default:
+	 //printf("key receved %d %c\n",event.key.keysym.sym,event.key.keysym.sym);
+	   if((int)event.key.keysym.sym >=256 &&(int)event.key.keysym.sym <=265)
+	     buffer[indice++]=event.key.keysym.sym-208;
+	   else
+	   if(event.key.keysym.sym >= SDLK_a && event.key.keysym.sym <=SDLK_z && shift==0)
+	     buffer[indice++]=(char)event.key.keysym.sym;
+	   else
+	    if(event.key.keysym.sym >= SDLK_a && event.key.keysym.sym <=SDLK_z && shift==1)
+	    buffer[indice++]=(char)event.key.keysym.sym-32;
+	  break;
+	}
+       }
+     }
+     
+	SDL_Flip(ecran);
+   }
+
+  free(buffer_para);
+  free(buffer);  
+  free(mini_buffer);
+}

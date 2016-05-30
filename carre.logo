@@ -1,0 +1,3 @@
+pour carre :x
+repete 4 [ av :x td 90 ]
+fin

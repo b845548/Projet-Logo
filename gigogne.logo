@@ -1,0 +1,3 @@
+pour gigogne 
+:y carre :y si :y > 7 [ gigogne :y - 7 ] 
+fin

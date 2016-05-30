@@ -1,0 +1,29 @@
+Exception! : Non defined function 'avear'
+avear
+^ BAD SYNTAX
+Exception! : Non defined function 'e'
+e
+^ BAD SYNTAX
+Exception! : Non defined function 'recursiv'
+recursiv 100
+^ BAD SYNTAX
+Exception! : Non defined function 'recursi_chapeau'
+recursi_chapeau 100
+^ BAD SYNTAX
+Exception! : Non defined function 'av10'
+av10
+^ BAD SYNTAX
+Exception! : Non defined function 'polygon'
+polygon 100
+^ BAD SYNTAX
+Exception! : Bracket is not closed
+Exception! : Bracket is not closed
+Exception! : Non defined function '100+100'
+repete 5 [av 100+100]
+              ^ BAD SYNTAX
+Exception! : Non defined function 'pu'
+pu
+^ BAD SYNTAX
+Exception! : Non defined function 'pu'
+pu
+^ BAD SYNTAX
